@@ -16,6 +16,7 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/Private/KismetTraceUtils.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "CWeaponBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -47,26 +48,11 @@ ACyberCharacter::ACyberCharacter()
 	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
 	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
 
-	// Create a gun mesh component
-	FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
-	FP_Gun->SetOnlyOwnerSee(true);			// only the owning player will see this mesh
-	FP_Gun->bCastDynamicShadow = false;
-	FP_Gun->CastShadow = false;
-	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-	FP_Gun->SetupAttachment(RootComponent);
 
-	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
-	FP_MuzzleLocation->SetupAttachment(FP_Gun);
-	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
-
+	// TODO@: move to WeaponBase Class.
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(100.0f, 0.0f, 10.0f);
 
-	// Auto Fire Init
-	RateOfFire = 550.0f;
-
-	ZoomedFOV = 55.0f;
-	ZoomInterpSpeed = 15.0f;
 }
 
 void ACyberCharacter::BeginPlay()
@@ -74,11 +60,8 @@ void ACyberCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
-	FP_Gun->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	Mesh1P->SetHiddenInGame(false, true);
-
-	TimeBetweenShots = 60 / RateOfFire;
-	DefaultFOV = FirstPersonCameraComponent->FieldOfView;
+	SetupWeapon();
 
 }
 
@@ -86,11 +69,11 @@ void ACyberCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	float TargetFOV = bWantsToZoom ? ZoomedFOV : DefaultFOV;
+	/*float TargetFOV = bWantsToZoom ? ZoomedFOV : DefaultFOV;
 
 	float NewFOV = FMath::FInterpTo(FirstPersonCameraComponent->FieldOfView, TargetFOV, DeltaTime, ZoomInterpSpeed);
 	
-	FirstPersonCameraComponent->SetFieldOfView(NewFOV);
+	FirstPersonCameraComponent->SetFieldOfView(NewFOV);*/
 
 }
 
@@ -132,80 +115,37 @@ void ACyberCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ACyberCharacter::LookUpAtRate);
 }
 
-void ACyberCharacter::OnFire()
+
+void ACyberCharacter::SetupWeapon()
 {
-	bool bFailedAtProjectileSpawning = false;
-	// try and fire a projectile
-	if (ProjectileClass != NULL)
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CurrentWeapon = GetWorld()->SpawnActor<ACWeaponBase>(StarterWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+
+	if (CurrentWeapon)
 	{
-		UWorld* const World = GetWorld();
-		if (World != NULL)
-		{
-
-			const FRotator SpawnRotation = GetControlRotation();
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
-
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-			
-
-			// spawn the projectile at the muzzle
-			auto SpawnedProjectile = World->SpawnActor<ACyberProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-			LastTimeFire = GetWorld()->TimeSeconds;
-
-			if (SpawnedProjectile)
-			{
-				SpawnedProjectile->HomingMissile(HomingTarget);
-				bFailedAtProjectileSpawning = false;
-			}
-			else
-			{
-				bFailedAtProjectileSpawning = true;
-			}
-			PlayCameraEffects();
-		}
+		CurrentWeapon->SetOwner(this);
+		CurrentWeapon->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	}
 
-	if (!bFailedAtProjectileSpawning)
-	{
-		// try and play the sound if specified
-		if (FireSound != NULL)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-		}
+}
 
-		// try and play a firing animation if specified
-		if (FireAnimation != NULL)
-		{
-			// Get the animation object for the arms mesh
-			UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-			if (AnimInstance != NULL)
-			{
-				AnimInstance->Montage_Play(FireAnimation, 1.f);
-			}
-		}
 
-		if (MuzzleFlashEffect)
-		{
-			UGameplayStatics::SpawnEmitterAttached(MuzzleFlashEffect, FP_Gun, "Muzzle");
-		}
-		
-	}
+void ACyberCharacter::Fire()
+{
+	// TODO@: Call Fire from CWeaponBase
 }
 
 
 void ACyberCharacter::StartFire()
 {
-	float FirstDelay = FMath::Max(LastTimeFire + TimeBetweenShots - GetWorld()->TimeSeconds, 0.0f);
-	GetWorldTimerManager().SetTimer(TimerHandle_TimeBetweenShots, this, &ACyberCharacter::OnFire, TimeBetweenShots, true, FirstDelay);
+	//TODO@: call StartAutomaticFire from CWeaponBase
 }
 
 
 void ACyberCharacter::StopFire()
 {
-	GetWorldTimerManager().ClearTimer(TimerHandle_TimeBetweenShots);
+	//TODO@: call StopAutomaticFire from CWeaponBase
 }
 
 
@@ -221,6 +161,7 @@ void ACyberCharacter::EndZoom()
 }
 
 
+// TODO@: Remove Later
 void ACyberCharacter::AssignTarget()
 {
 	FHitResult Hit;
@@ -276,11 +217,3 @@ void ACyberCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void ACyberCharacter::PlayCameraEffects()
-{
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC)
-	{
-		PC->ClientPlayCameraShake(CameraShakeClass);
-	}
-}

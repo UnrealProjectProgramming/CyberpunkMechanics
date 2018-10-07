@@ -19,19 +19,9 @@ class ACyberCharacter : public ACharacter
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* Mesh1P;
 
-	/** Gun mesh: 1st person view (seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* FP_Gun;
-
-	/** Location on gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USceneComponent* FP_MuzzleLocation;
-
-
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
-
 
 
 public:
@@ -44,32 +34,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character")
 	AStaticMeshActor* HomingTarget;
-
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float ZoomedFOV;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float ZoomInterpSpeed;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	UParticleSystem* MuzzleFlashEffect;
-
-	/* Number of bullets that will be shot in a minute  */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float RateOfFire;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TSubclassOf<class UCameraShake> CameraShakeClass;
-
-	UPROPERTY()
-	float TimeBetweenShots;
-
-	UPROPERTY()
-	float LastTimeFire;
-
-	float DefaultFOV;
-
 
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -84,20 +48,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
 	FVector GunOffset;
 
-	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
-	TSubclassOf<class ACyberProjectile> ProjectileClass;
-
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	class USoundBase* FireSound;
-
-	/** AnimMontage to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* FireAnimation;
-
-	FTimerHandle TimerHandle_TimeBetweenShots;
-
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	bool bWantsToZoom;
 
@@ -106,7 +56,7 @@ protected:
 	
 	/** Fires a projectile.  Single Fire*/
 	UFUNCTION()
-	void OnFire();
+	void Fire();
 
 	// Start Fire and Endfire are used for automatic fire.
 	UFUNCTION()
@@ -121,6 +71,7 @@ protected:
 	UFUNCTION()
 	void EndZoom();
 
+	void SetupWeapon();
 
 	/**
 	 * Assings Target that we want to shoot the projectile At 
@@ -145,10 +96,15 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-
 	void PlayCameraEffects();
 
-	
+	UPROPERTY(BlueprintReadOnly)
+	class ACWeaponBase* CurrentWeapon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player")
+	TSubclassOf<class ACWeaponBase> StarterWeaponClass;
+
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
