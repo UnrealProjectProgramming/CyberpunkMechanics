@@ -18,14 +18,6 @@ class ACyberProjectile : public AActor
 	UPROPERTY(VisibleDefaultsOnly, Category=Projectile)
 	class USphereComponent* CollisionComp;
 
-	/** Projectile movement component */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	class UProjectileMovementComponent* ProjectileMovement;
-
-protected:
-
-	void PlayParticleEffects();
-
 protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
@@ -34,6 +26,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 	UParticleSystem* HitEffect;
 	
+	/** Projectile movement component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	class UProjectileMovementComponent* ProjectileMovement;
 
 public:
 	ACyberProjectile();
@@ -42,7 +37,10 @@ public:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	void HomingMissile(AStaticMeshActor* TargetToHit);
+	void PlayParticleEffects();
+
+
+	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovementComp() const { return ProjectileMovement; }
 
 	/** Returns CollisionComp subobject **/
 	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }

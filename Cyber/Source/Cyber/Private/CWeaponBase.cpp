@@ -84,19 +84,13 @@ void ACWeaponBase::Fire()
 
 
 			// spawn the projectile at the muzzle
-			auto SpawnedProjectile = World->SpawnActor<ACyberProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			SpawnedProjectile = World->SpawnActor<ACyberProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			if (SpawnedProjectile)
+			{
+				SpawnedProjectile->PlayParticleEffects();
+			}
 			LastTimeFire = GetWorld()->TimeSeconds;
 
-			//TODO@: Move this to child class 
-			/*if (SpawnedProjectile)
-			{
-				SpawnedProjectile->HomingMissile(HomingTarget);
-				bFailedAtProjectileSpawning = false;
-			}
-			else
-			{
-				bFailedAtProjectileSpawning = true;
-			}*/
 			PlayCameraEffects();
 		}
 	}
@@ -124,7 +118,6 @@ void ACWeaponBase::Fire()
 		{
 			UGameplayStatics::SpawnEmitterAttached(MuzzleFlashEffect, FP_Gun, "Muzzle");
 		}
-
 	}
 }
 

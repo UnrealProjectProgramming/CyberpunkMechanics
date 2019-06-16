@@ -35,37 +35,6 @@ ACyberProjectile::ACyberProjectile()
 }
 
 
-void ACyberProjectile::HomingMissile(AStaticMeshActor* TargetToHit)
-{
-	if (TargetToHit && ProjectileMovement)
-	{
-		auto HittingTarget = TargetToHit->GetStaticMeshComponent();
-		if (HittingTarget == nullptr)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Null Hitting target"));
-			Destroy();
-			return;
-		}
-
-		ProjectileMovement->HomingTargetComponent = HittingTarget;
-		ProjectileMovement->bIsHomingProjectile = true;
-		ProjectileMovement->HomingAccelerationMagnitude = FMath::RandRange(15000.0f, 25000.0f);
-	
-		UE_LOG(LogTemp, Warning, TEXT("HomingTargetComp or ProjectileMovment are Nullptr"));
-		
-
-		// To allow for more random moving up and down when we shoot the projectile.
-		FVector NewVelocity = FVector(ProjectileMovement->Velocity.X,
-									  FMath::RandRange(-300.0f, 300.0f),
-									  FMath::RandRange(-300.0f, 300.0f));
-
-		ProjectileMovement->SetVelocityInLocalSpace(NewVelocity);
-
-	}
-	PlayParticleEffects();
-}
-
-
 void ACyberProjectile::PlayParticleEffects()
 {
 	/* Spawn Particle if avialbe*/
@@ -81,7 +50,9 @@ void ACyberProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 	// Only add impulse and destroy projectile if we hit a physics
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL) && OtherComp->IsSimulatingPhysics())
 	{
-		OtherComp->AddImpulseAtLocation(GetVelocity() * 10.0f, GetActorLocation());		
+		OtherComp->AddImpulseAtLocation(GetVelocity() * 10.0f, GetActorLocation());	
+		CollisionComp->SetCollisionProfileName(TEXT("OverlapAll"));
+
 		if (HitEffect)
 		{
 			UGameplayStatics::SpawnEmitterAttached(HitEffect, RootComponent);

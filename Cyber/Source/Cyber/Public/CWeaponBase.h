@@ -22,9 +22,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
 	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 	TSubclassOf<class ACyberProjectile> ProjectileClass;
 
 
@@ -32,6 +31,17 @@ public:
 	float GetZoomedFOV() { return ZoomedFOV; }
 	float GetDefaultFOV() { return DefaultFOV; }
 	float GetZoomInterpSpeed() { return ZoomInterpSpeed; }
+
+
+	UFUNCTION()
+	virtual void Fire();
+
+	UFUNCTION()
+	void StartFire();
+
+	UFUNCTION()
+	void StopFire();
+
 
 
 protected:
@@ -79,16 +89,9 @@ protected:
 
 	class ACyberCharacter* MyPawn;
 
+	class ACyberProjectile* SpawnedProjectile;
+
 protected:
-	UFUNCTION()
-	virtual void Fire();
-
-	UFUNCTION()
-	void StartFire();
-
-	UFUNCTION()
-	void StopFire();
-
 	void PlayCameraEffects();
 
 private:

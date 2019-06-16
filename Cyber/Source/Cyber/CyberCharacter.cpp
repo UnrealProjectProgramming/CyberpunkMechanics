@@ -133,19 +133,30 @@ void ACyberCharacter::SetupWeapon()
 
 void ACyberCharacter::Fire()
 {
-	// TODO@: Call Fire from CWeaponBase
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Fire();
+	}
 }
 
 
 void ACyberCharacter::StartFire()
 {
 	//TODO@: call StartAutomaticFire from CWeaponBase
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StartFire();
+	}
 }
 
 
 void ACyberCharacter::StopFire()
 {
 	//TODO@: call StopAutomaticFire from CWeaponBase
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StopFire();
+	}
 }
 
 
@@ -176,8 +187,8 @@ void ACyberCharacter::AssignTarget()
 
 	if (bSuccessfulHit)
 	{
-		HomingTarget = Cast<AStaticMeshActor>(Hit.Actor);
-		UE_LOG(LogTemp, Warning, TEXT("Successful Hit: %s"), *HomingTarget->GetName());
+		//HomingTarget = Cast<AStaticMeshActor>(Hit.Actor);
+		//UE_LOG(LogTemp, Warning, TEXT("Successful Hit: %s"), *HomingTarget->GetName());
 	}
 
 	DrawDebugLine(GetWorld(), StartDirection, EndDirection, FColor::Red, true, 5.0f);
